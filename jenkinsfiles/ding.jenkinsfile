@@ -1,0 +1,38 @@
+#!groovy
+
+@Library('pipeline-library-demo')_
+
+//func from shareibrary
+def dingmes = new org.devops.dingmes()
+
+//env
+String branchName = "master"
+String gitlabCredentialsId = "xxx"
+String gitUrl = "http://xxx/xxx/jenkinslibrary.git"
+String robotId = "2e0e11c4-2211-4687-b317-cacf58197288"
+
+pipeline {
+    agent any
+
+    stages {
+        stage('Git Clone') {
+            steps {
+                git branch: "{branchName}",
+                credentialsId: "{gitlabCredentialsId}",
+                url: "${gitUrl}"
+            }
+        }
+    }
+    post {
+        success {
+            script {
+                dingmes.DingdingReq(robotId, "构建成功 ✅")
+            }
+        }
+        failure {
+            script {
+                dingmes.DingdingReq(robotId, "构建失败 ❌")
+            }
+        }
+    }
+}
