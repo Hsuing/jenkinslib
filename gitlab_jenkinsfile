@@ -1,0 +1,89 @@
+@Library("sharelib") _
+
+//导入
+def gitab = new org.devops.gitlab()
+
+pipeline {
+	agent { label "master"}
+	
+	stages{
+		stage("test"){
+			steps{
+				script{
+					/*withCredentials([string(credentialsId: 'e0c7ba82-67da-42a0-ae98-95cf0c019569', variable: 'GITLABTOKEN')]) {
+					sh """
+					//Create branch
+						curl --location \
+						     --request POST \
+						     "http://192.168.1.22/api/v4/projects/2/repository/branches?branch=${env.branchName}&ref=${env.baseBranch}" \
+						     --header "PRIVATE-TOKEN: ${GITLABTOKEN}"
+					"""
+					}*/
+					projectId = GetprojectId(${env.projectName}")
+					CreateBranch(projectId, "${env.branchName}", "${env.baseBranch}")
+					
+					/*
+					projectId = gitlab.GetprojectId(${env.projectName}")
+					gitlab.CreateBranch(projectId, "${env.branchName}", "${env.baseBranch}")
+					*/
+				}
+			}
+		}
+	}
+}
+
+
+//
+def HttpReq(apiURL, method){
+	gitlabURL = "http://192.168.1.22/api/v4"
+	withCredentials([string(credentialsId: 'e0c7ba82-67da-42a0-ae98-95cf0c019569', variable: 'GITLABTOKEN')]) {
+				response =	sh returnStdout: true, script: """
+					//Create branch
+						curl --location \
+						     --request POST \
+						     "${gitlabURL}/${apiURL}" \
+						     --header "PRIVATE-TOKEN: ${GITLABTOKEN}"
+					"""
+	}
+	return response
+}
+
+
+//创建分支
+def CreateBranch(projectId, branchName, baseBranch){
+	
+	apiURL = "projects/${projectId}/repository/branches?branch=${branchName}&ref=${baseBranch}"
+	HttpReq(apiURL, "POST")
+	
+	/*withCredentials([string(credentialsId: 'e0c7ba82-67da-42a0-ae98-95cf0c019569', variable: 'GITLABTOKEN')]) {
+					sh """
+					//Create branch
+						curl --location \
+						     --request POST \
+						     "http://192.168.1.22/api/v4/projects/${projectId}/repository/branches?branch=${branchName}&ref=${baseBranch}" \
+						     --header "PRIVATE-TOKEN: ${GITLABTOKEN}"
+					"""
+	}*/
+}
+
+
+//获取项目 id
+def GetprojectId(projectName){
+	apiURL = "project?search=${projectName}"
+	result = HttpReq(apiURL, "GET")
+	result = readJSON test: result
+	
+	return result[0]["id"]
+	
+	/*withCredentials([string(credentialsId: 'e0c7ba82-67da-42a0-ae98-95cf0c019569', variable: 'GITLABTOKEN')]) {
+					sh """
+					//Create branch
+						curl --location \
+						     --request POST \
+						     "http://192.168.1.22/api/v4/projects/${projectId}/repository/branches?branch=${branchName}&ref=${baseBranch}" \
+						     --header "PRIVATE-TOKEN: ${GITLABTOKEN}"
+					"""
+	}*/
+}
+
+
